@@ -1,0 +1,46 @@
+name: Deploy BarberSales (Monorepo)
+
+on:
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.BEGET_HOST }}
+          username: ${{ secrets.BEGET_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # 1. Переходим в общую папку проекта
+            cd /var/www/barbersales
+            
+            # 2. Обновляем код из GitHub
+            git fetch origin
+            git reset --hard origin/${{ github.ref_name }}
+            
+            # 3. Обновляем Бэкенд
+            echo "📦 Updating Backend..."
+            cd barber-backend
+            npm install
+            npx prisma generate
+            pm2 restart barber-api || pm2 start server.js --name "barber-api"
+            
+            # 4. Обновляем Фронтенд
+            echo "🎨 Updating Frontend..."
+            cd ../barber-sales
+            npm install
+            export VITE_API_URL=/api
+            npm run build
+            # Перезапуск фронтенда (preview на порту 3000)
+            pm2 restart barber-frontend || pm2 start npm --name "barber-frontend" -- run preview -- --port 3000 --host
+            
+            # 5. Сохраняем состояние PM2
+            pm2 save
+            echo "✅ Deployment Successful!"
