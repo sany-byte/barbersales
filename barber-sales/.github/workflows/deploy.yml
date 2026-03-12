@@ -1,0 +1,32 @@
+name: Deploy BarberSales
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to Beget via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.BEGET_HOST }}
+          username: ${{ secrets.BEGET_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/barbersales
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/sany-byte/barbersales.git .
+            else
+              git pull origin main
+            fi
+            
+            npm install
+            npm run build
+            
+            pm2 delete barbersales || true
+            pm2 start npm --name "barbersales" -- run preview -- --port 3000 --host
+            pm2 save

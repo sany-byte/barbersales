@@ -1,0 +1,56 @@
+.tooltip-container {
+    position: relative;
+    display: inline-flex;
+}
+
+.tooltip-box {
+    position: absolute;
+    background-color: #2F323A;
+    /* Темный цвет из макета Яндекс 360 */
+    color: #FFFFFF;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+    opacity: 0;
+    animation: fadeInTooltip 0.15s ease-out forwards;
+}
+
+@keyframes fadeInTooltip {
+    from {
+        opacity: 0;
+        transform: translate(0, -50%) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(0, -50%) scale(1);
+    }
+}
+
+/* Треугольник (хвостик) */
+.tooltip-box::before {
+    content: '';
+    position: absolute;
+    border-style: solid;
+}
+
+/* Позиция справа от элемента (отступ 12px) */
+.tooltip-right {
+    top: 50%;
+    left: calc(100% + 12px);
+    transform: translate(0, -50%);
+}
+
+.tooltip-right::before {
+    top: 50%;
+    left: -5px;
+    /* Выдвигаем за пределы левого края */
+    transform: translateY(-50%);
+    border-width: 5px 6px 5px 0;
+    border-color: transparent #2F323A transparent transparent;
+}

@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String        @id @default(uuid())
+  name           String
+  role           String        // "owner", "admin", "master"
+  phone          String?       @unique
+  email          String?       @unique
+  avatar         String?
+  specialization String?
+  status         String        @default("Активен") // "Активен", "Отпуск", "Уволен",
+  isBookable     Boolean       @default(false)
+  monthlyHoursLimit Int        @default(178)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations
+  appointmentsMaster Appointment[] @relation("MasterAppointments")
+  schedules          Schedule[]
+}
+
+model Service {
+  id             String        @id @default(uuid())
+  name           String
+  duration       Int           // in minutes
+  price          Float
+  primeCost      Float?
+  masterCutType  String        @default("percent") // "percent" or "fixed"
+  masterCutValue Float         @default(0)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations
+  appointments   Appointment[]
+}
+
+model Client {
+  id        String        @id @default(uuid())
+  name      String
+  phone     String        @unique
+  notes     String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  // Relations
+  appointments Appointment[]
+}
+
+model Appointment {
+  id          String    @id @default(uuid())
+  clientId    String
+  masterId    String
+  serviceId   String
+  startTime   DateTime
+  endTime     DateTime
+  status      String    @default("new") // "new", "confirmed", "in-chair", "completed", "cancelled", "no-show"
+  finalPrice  Float
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  client      Client    @relation(fields: [clientId], references: [id])
+  master      User      @relation("MasterAppointments", fields: [masterId], references: [id])
+  service     Service   @relation(fields: [serviceId], references: [id])
+}
+
+model Schedule {
+  id        String   @id @default(uuid())
+  masterId  String
+  date      DateTime
+  startTime String   // e.g., "10:00"
+  endTime   String   // e.g., "22:00"
+
+  // Relations
+  master    User     @relation(fields: [masterId], references: [id])
+}
